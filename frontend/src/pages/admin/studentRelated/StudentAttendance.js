@@ -25,7 +25,7 @@ const StudentAttendance = ({ situation }) => {
     const [subjectName, setSubjectName] = useState("");
     const [chosenSubName, setChosenSubName] = useState("");
     const [status, setStatus] = useState('');
-    const [date, setDate] = useState('');
+    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
 
     const [showPopup, setShowPopup] = useState(false);
     const [message, setMessage] = useState("");

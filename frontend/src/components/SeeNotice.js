@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
 import { getAllNotices } from '../redux/noticeRelated/noticeHandle';
-import { Paper } from '@mui/material';
+import { Paper, Container, Typography, Box, CircularProgress } from '@mui/material';
 import TableViewTemplate from './TableViewTemplate';
 
 const SeeNotice = () => {
@@ -39,24 +39,48 @@ const SeeNotice = () => {
             id: notice._id,
         };
     });
-    return (
-        <div style={{ marginTop: '50px', marginRight: '20px' }}>
-            {loading ? (
-                <div style={{ fontSize: '20px' }}>Loading...</div>
-            ) : response ? (
-                <div style={{ fontSize: '20px' }}>No Notices to Show Right Now</div>
-            ) : (
-                <>
-                    <h3 style={{ fontSize: '30px', marginBottom: '40px' }}>Notices</h3>
-                    <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-                        {Array.isArray(noticesList) && noticesList.length > 0 &&
-                            <TableViewTemplate columns={noticeColumns} rows={noticeRows} />
-                        }
-                    </Paper>
-                </>
-            )}
-        </div>
 
+    return (
+        <Container maxWidth="lg">
+            <Box sx={{ py: 5 }}>
+                {loading ? (
+                    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+                        <CircularProgress />
+                    </Box>
+                ) : response ? (
+                    <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+                        <Typography variant="h6" color="textSecondary">
+                            No Notices to Show Right Now
+                        </Typography>
+                    </Box>
+                ) : (
+                    <>
+                        <Typography variant="h4" component="h1" gutterBottom sx={{ mb: 4 }}>
+                            Notices
+                        </Typography>
+                        <Paper 
+                            elevation={3}
+                            sx={{ 
+                                width: '100%', 
+                                overflow: 'hidden',
+                                borderRadius: 2,
+                                '& .MuiTableContainer-root': {
+                                    maxHeight: {
+                                        xs: '50vh',
+                                        sm: '60vh',
+                                        md: '70vh'
+                                    }
+                                }
+                            }}
+                        >
+                            {Array.isArray(noticesList) && noticesList.length > 0 &&
+                                <TableViewTemplate columns={noticeColumns} rows={noticeRows} />
+                            }
+                        </Paper>
+                    </>
+                )}
+            </Box>
+        </Container>
     )
 }
 

@@ -3,11 +3,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import { deleteUser, getUserDetails, updateUser } from '../../../redux/userRelated/userHandle';
 import { useNavigate, useParams } from 'react-router-dom'
 import { getSubjectList } from '../../../redux/sclassRelated/sclassHandle';
-import { Box, Button, Collapse, IconButton, Table, TableBody, TableHead, Typography, Tab, Paper, BottomNavigation, BottomNavigationAction, Container } from '@mui/material';
+import { Box, Button, Collapse, IconButton, Table, TableBody, TableHead, Typography, Tab, Paper, BottomNavigation, BottomNavigationAction, Container, Card, CardContent, Grid, LinearProgress, Chip, TextField, Stack, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import { KeyboardArrowUp, KeyboardArrowDown, Delete as DeleteIcon } from '@mui/icons-material';
+import { KeyboardArrowUp, KeyboardArrowDown, Delete as DeleteIcon, School as SchoolIcon, Person as PersonIcon, Class as ClassIcon } from '@mui/icons-material';
 import { removeStuff, updateStudentFields } from '../../../redux/studentRelated/studentHandle';
 import { calculateOverallAttendancePercentage, calculateSubjectAttendancePercentage, groupAttendanceBySubject } from '../../../components/attendanceCalculator';
 import CustomBarChart from '../../../components/CustomBarChart'
@@ -144,98 +144,200 @@ const ViewStudent = () => {
     });
 
     const StudentAttendanceSection = () => {
+        const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+        const [deleteAllConfirmOpen, setDeleteAllConfirmOpen] = useState(false);
+        const [subjectToDelete, setSubjectToDelete] = useState(null);
+
+        const handleDeleteConfirm = () => {
+            removeSubAttendance(subjectToDelete);
+            setDeleteConfirmOpen(false);
+        };
+
+        const handleDeleteAllConfirm = () => {
+            removeHandler(studentID, "RemoveStudentAtten");
+            setDeleteAllConfirmOpen(false);
+        };
+
         const renderTableSection = () => {
             return (
-                <>
-                    <h3>Attendance:</h3>
-                    <Table>
-                        <TableHead>
-                            <StyledTableRow>
-                                <StyledTableCell>Subject</StyledTableCell>
-                                <StyledTableCell>Present</StyledTableCell>
-                                <StyledTableCell>Total Sessions</StyledTableCell>
-                                <StyledTableCell>Attendance Percentage</StyledTableCell>
-                                <StyledTableCell align="center">Actions</StyledTableCell>
-                            </StyledTableRow>
-                        </TableHead>
-                        {Object.entries(groupAttendanceBySubject(subjectAttendance)).map(([subName, { present, allData, subId, sessions }], index) => {
-                            const subjectAttendancePercentage = calculateSubjectAttendancePercentage(present, sessions);
-                            return (
-                                <TableBody key={index}>
-                                    <StyledTableRow>
-                                        <StyledTableCell>{subName}</StyledTableCell>
-                                        <StyledTableCell>{present}</StyledTableCell>
-                                        <StyledTableCell>{sessions}</StyledTableCell>
-                                        <StyledTableCell>{subjectAttendancePercentage}%</StyledTableCell>
-                                        <StyledTableCell align="center">
-                                            <Button variant="contained"
-                                                onClick={() => handleOpen(subId)}>
-                                                {openStates[subId] ? <KeyboardArrowUp /> : <KeyboardArrowDown />}Details
-                                            </Button>
-                                            <IconButton onClick={() => removeSubAttendance(subId)}>
-                                                <DeleteIcon color="error" />
-                                            </IconButton>
-                                            <Button variant="contained" sx={styles.attendanceButton}
-                                                onClick={() => navigate(`/Admin/subject/student/attendance/${studentID}/${subId}`)}>
-                                                Change
-                                            </Button>
-                                        </StyledTableCell>
-                                    </StyledTableRow>
-                                    <StyledTableRow>
-                                        <StyledTableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
-                                            <Collapse in={openStates[subId]} timeout="auto" unmountOnExit>
-                                                <Box sx={{ margin: 1 }}>
-                                                    <Typography variant="h6" gutterBottom component="div">
-                                                        Attendance Details
-                                                    </Typography>
-                                                    <Table size="small" aria-label="purchases">
-                                                        <TableHead>
-                                                            <StyledTableRow>
-                                                                <StyledTableCell>Date</StyledTableCell>
-                                                                <StyledTableCell align="right">Status</StyledTableCell>
-                                                            </StyledTableRow>
-                                                        </TableHead>
-                                                        <TableBody>
-                                                            {allData.map((data, index) => {
-                                                                const date = new Date(data.date);
-                                                                const dateString = date.toString() !== "Invalid Date" ? date.toISOString().substring(0, 10) : "Invalid Date";
-                                                                return (
-                                                                    <StyledTableRow key={index}>
-                                                                        <StyledTableCell component="th" scope="row">
-                                                                            {dateString}
-                                                                        </StyledTableCell>
-                                                                        <StyledTableCell align="right">{data.status}</StyledTableCell>
-                                                                    </StyledTableRow>
-                                                                )
-                                                            })}
-                                                        </TableBody>
-                                                    </Table>
+                <Box sx={{ p: 3 }}>
+                    <Typography variant="h5" gutterBottom>Attendance Record</Typography>
+                    <Paper elevation={3} sx={{ p: 2, mb: 3 }}>
+                        <Table>
+                            <TableHead>
+                                <StyledTableRow>
+                                    <StyledTableCell>Subject</StyledTableCell>
+                                    <StyledTableCell>Present</StyledTableCell>
+                                    <StyledTableCell>Total Sessions</StyledTableCell>
+                                    <StyledTableCell>Attendance Percentage</StyledTableCell>
+                                    <StyledTableCell>Last Updated</StyledTableCell>
+                                    <StyledTableCell align="center">Actions</StyledTableCell>
+                                </StyledTableRow>
+                            </TableHead>
+                            {Object.entries(groupAttendanceBySubject(subjectAttendance)).map(([subName, { present, allData, subId, sessions }], index) => {
+                                const subjectAttendancePercentage = calculateSubjectAttendancePercentage(present, sessions);
+                                const lastUpdated = allData.length > 0 ? new Date(allData[allData.length - 1].date).toLocaleDateString() : 'N/A';
+                                return (
+                                    <TableBody key={index}>
+                                        <StyledTableRow>
+                                            <StyledTableCell>{subName}</StyledTableCell>
+                                            <StyledTableCell>{present}</StyledTableCell>
+                                            <StyledTableCell>{sessions}</StyledTableCell>
+                                            <StyledTableCell>
+                                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                    <Box sx={{ width: '100%', mr: 1 }}>
+                                                        <LinearProgress variant="determinate" value={subjectAttendancePercentage} 
+                                                            sx={{
+                                                                height: 10,
+                                                                borderRadius: 5,
+                                                                backgroundColor: '#e0e0e0',
+                                                                '& .MuiLinearProgress-bar': {
+                                                                    backgroundColor: subjectAttendancePercentage >= 75 ? '#4caf50' : '#f44336',
+                                                                    borderRadius: 5,
+                                                                }
+                                                            }}
+                                                        />
+                                                    </Box>
+                                                    <Box sx={{ minWidth: 35 }}>
+                                                        <Typography variant="body2" color="text.secondary">{`${Math.round(subjectAttendancePercentage)}%`}</Typography>
+                                                    </Box>
                                                 </Box>
-                                            </Collapse>
-                                        </StyledTableCell>
-                                    </StyledTableRow>
-                                </TableBody>
-                            )
-                        }
-                        )}
-                    </Table>
-                    <div>
-                        Overall Attendance Percentage: {overallAttendancePercentage.toFixed(2)}%
-                    </div>
-                    <Button variant="contained" color="error" startIcon={<DeleteIcon />} onClick={() => removeHandler(studentID, "RemoveStudentAtten")}>Delete All</Button>
-                    <Button variant="contained" sx={styles.styledButton} onClick={() => navigate("/Admin/students/student/attendance/" + studentID)}>
-                        Add Attendance
-                    </Button>
-                </>
+                                            </StyledTableCell>
+                                            <StyledTableCell>{lastUpdated}</StyledTableCell>
+                                            <StyledTableCell align="center">
+                                                <Button variant="contained" size="small" sx={{ mr: 1 }}
+                                                    onClick={() => handleOpen(subId)}>
+                                                    {openStates[subId] ? <KeyboardArrowUp /> : <KeyboardArrowDown />}Details
+                                                </Button>
+                                                <IconButton size="small" onClick={() => {
+                                                    setSubjectToDelete(subId);
+                                                    setDeleteConfirmOpen(true);
+                                                }}>
+                                                    <DeleteIcon color="error" />
+                                                </IconButton>
+                                                <Button variant="contained" size="small" color="primary" sx={{ ml: 1 }}
+                                                    onClick={() => navigate(`/Admin/subject/student/attendance/${studentID}/${subId}`)}>
+                                                    Change
+                                                </Button>
+                                            </StyledTableCell>
+                                        </StyledTableRow>
+                                        <StyledTableRow>
+                                            <StyledTableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+                                                <Collapse in={openStates[subId]} timeout="auto" unmountOnExit>
+                                                    <Box sx={{ margin: 1 }}>
+                                                        <Typography variant="h6" gutterBottom component="div">
+                                                            Attendance Details
+                                                        </Typography>
+                                                        <Table size="small" aria-label="purchases">
+                                                            <TableHead>
+                                                                <StyledTableRow>
+                                                                    <StyledTableCell>Date</StyledTableCell>
+                                                                    <StyledTableCell align="right">Status</StyledTableCell>
+                                                                </StyledTableRow>
+                                                            </TableHead>
+                                                            <TableBody>
+                                                                {allData.map((data, index) => {
+                                                                    const date = new Date(data.date);
+                                                                    const dateString = date.toString() !== "Invalid Date" ? date.toISOString().substring(0, 10) : "Invalid Date";
+                                                                    return (
+                                                                        <StyledTableRow key={index}>
+                                                                            <StyledTableCell component="th" scope="row">
+                                                                                {dateString}
+                                                                            </StyledTableCell>
+                                                                            <StyledTableCell align="right">
+                                                                                <Chip 
+                                                                                    label={data.status}
+                                                                                    color={data.status === 'Present' ? 'success' : 'error'}
+                                                                                    size="small"
+                                                                                />
+                                                                            </StyledTableCell>
+                                                                        </StyledTableRow>
+                                                                    )
+                                                                })}
+                                                            </TableBody>
+                                                        </Table>
+                                                    </Box>
+                                                </Collapse>
+                                            </StyledTableCell>
+                                        </StyledTableRow>
+                                    </TableBody>
+                                )
+                            }
+                            )}
+                        </Table>
+                        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography variant="h6">
+                                Overall Attendance: {overallAttendancePercentage.toFixed(2)}%
+                            </Typography>
+                            <Box>
+                                <Button variant="contained" color="error" startIcon={<DeleteIcon />} 
+                                    onClick={() => setDeleteAllConfirmOpen(true)} sx={{ mr: 2 }}>
+                                    Delete All
+                                </Button>
+                                <Button variant="contained" color="primary"
+                                    onClick={() => navigate("/Admin/students/student/attendance/" + studentID)}>
+                                    Add Attendance
+                                </Button>
+                            </Box>
+                        </Box>
+                    </Paper>
+
+                    <Dialog
+                        open={deleteConfirmOpen}
+                        onClose={() => setDeleteConfirmOpen(false)}
+                    >
+                        <DialogTitle>Confirm Delete</DialogTitle>
+                        <DialogContent>
+                            <DialogContentText>
+                                Are you sure you want to delete this subject's attendance record?
+                            </DialogContentText>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
+                            <Button onClick={handleDeleteConfirm} color="error" autoFocus>
+                                Delete
+                            </Button>
+                        </DialogActions>
+                    </Dialog>
+
+                    <Dialog
+                        open={deleteAllConfirmOpen}
+                        onClose={() => setDeleteAllConfirmOpen(false)}
+                    >
+                        <DialogTitle>Confirm Delete All</DialogTitle>
+                        <DialogContent>
+                            <DialogContentText>
+                                Are you sure you want to delete all attendance records? This action cannot be undone.
+                            </DialogContentText>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={() => setDeleteAllConfirmOpen(false)}>Cancel</Button>
+                            <Button onClick={handleDeleteAllConfirm} color="error" autoFocus>
+                                Delete All
+                            </Button>
+                        </DialogActions>
+                    </Dialog>
+                </Box>
             )
         }
         const renderChartSection = () => {
             return (
-                <>
-                    <CustomBarChart chartData={subjectData} dataKey="attendancePercentage" />
-                </>
+                <Box sx={{ p: 3 }}>
+                    <Paper elevation={3} sx={{ p: 2 }}>
+                        <Typography variant="h5" gutterBottom>Attendance Analytics</Typography>
+                        <Grid container spacing={3}>
+                            <Grid item xs={12} md={8}>
+                                <CustomBarChart chartData={subjectData} dataKey="attendancePercentage" />
+                            </Grid>
+                            <Grid item xs={12} md={4}>
+                                <CustomPieChart data={chartData} />
+                            </Grid>
+                        </Grid>
+                    </Paper>
+                </Box>
             )
         }
+
         return (
             <>
                 {subjectAttendance && Array.isArray(subjectAttendance) && subjectAttendance.length > 0
@@ -247,12 +349,12 @@ const ViewStudent = () => {
                         <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
                             <BottomNavigation value={selectedSection} onChange={handleSectionChange} showLabels>
                                 <BottomNavigationAction
-                                    label="Table"
+                                    label="Table View"
                                     value="table"
                                     icon={selectedSection === 'table' ? <TableChartIcon /> : <TableChartOutlinedIcon />}
                                 />
                                 <BottomNavigationAction
-                                    label="Chart"
+                                    label="Chart View"
                                     value="chart"
                                     icon={selectedSection === 'chart' ? <InsertChartIcon /> : <InsertChartOutlinedIcon />}
                                 />
@@ -260,9 +362,13 @@ const ViewStudent = () => {
                         </Paper>
                     </>
                     :
-                    <Button variant="contained" sx={styles.styledButton} onClick={() => navigate("/Admin/students/student/attendance/" + studentID)}>
-                        Add Attendance
-                    </Button>
+                    <Box sx={{ p: 3, textAlign: 'center' }}>
+                        <Typography variant="h6" gutterBottom>No attendance records found</Typography>
+                        <Button variant="contained" color="primary" 
+                            onClick={() => navigate("/Admin/students/student/attendance/" + studentID)}>
+                            Add Attendance
+                        </Button>
+                    </Box>
                 }
             </>
         )
@@ -338,118 +444,172 @@ const ViewStudent = () => {
             </>
         )
     }
+      const StudentDetailsSection = () => {
+          return (
+              <Box sx={{ p: 3 }}>
+                  <Paper elevation={3} sx={{ p: 4, mb: 4 }}>
+                      <Typography variant="h5" gutterBottom>Student Information</Typography>
+                      <Grid container spacing={2}>
+                          <Grid item xs={12} sm={6}>
+                              <Typography variant="subtitle1" color="text.secondary">Name:</Typography>
+                              <Typography variant="body1">{userDetails.name}</Typography>
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                              <Typography variant="subtitle1" color="text.secondary">Roll Number:</Typography>
+                              <Typography variant="body1">{userDetails.rollNum}</Typography>
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                              <Typography variant="subtitle1" color="text.secondary">Class:</Typography>
+                              <Typography variant="body1">{sclassName.sclassName}</Typography>
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                              <Typography variant="subtitle1" color="text.secondary">School:</Typography>
+                              <Typography variant="body1">{studentSchool.schoolName}</Typography>
+                          </Grid>
+                      </Grid>
+                  </Paper>
 
-    const StudentDetailsSection = () => {
-        return (
-            <div>
-                Name: {userDetails.name}
-                <br />
-                Roll Number: {userDetails.rollNum}
-                <br />
-                Class: {sclassName.sclassName}
-                <br />
-                School: {studentSchool.schoolName}
-                {
-                    subjectAttendance && Array.isArray(subjectAttendance) && subjectAttendance.length > 0 && (
-                        <CustomPieChart data={chartData} />
-                    )
-                }
-                <Button variant="contained" sx={styles.styledButton} onClick={deleteHandler}>
-                    Delete
-                </Button>
-                <br />
-                {/* <Button variant="contained" sx={styles.styledButton} className="show-tab" onClick={() => { setShowTab(!showTab) }}>
-                    {
-                        showTab
-                            ? <KeyboardArrowUp />
-                            : <KeyboardArrowDown />
-                    }
-                    Edit Student
-                </Button>
-                <Collapse in={showTab} timeout="auto" unmountOnExit>
-                    <div className="register">
-                        <form className="registerForm" onSubmit={submitHandler}>
-                            <span className="registerTitle">Edit Details</span>
-                            <label>Name</label>
-                            <input className="registerInput" type="text" placeholder="Enter user's name..."
-                                value={name}
-                                onChange={(event) => setName(event.target.value)}
-                                autoComplete="name" required />
+                  {subjectAttendance && Array.isArray(subjectAttendance) && subjectAttendance.length > 0 && (
+                      <Paper elevation={3} sx={{ p: 4, mb: 4 }}>
+                          <Typography variant="h6" gutterBottom>Attendance Overview</Typography>
+                          <CustomPieChart data={chartData} />
+                      </Paper>
+                  )}
 
-                            <label>Roll Number</label>
-                            <input className="registerInput" type="number" placeholder="Enter user's Roll Number..."
-                                value={rollNum}
-                                onChange={(event) => setRollNum(event.target.value)}
-                                required />
+                  <Paper elevation={3} sx={{ p: 4 }}>
+                      <Button 
+                          variant="contained" 
+                          onClick={() => setShowTab(!showTab)}
+                          endIcon={showTab ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+                          fullWidth
+                          sx={{ mb: 2 }}
+                      >
+                          Edit Student
+                      </Button>
+                    
+                      <Collapse in={showTab} timeout="auto" unmountOnExit>
+                          <Box sx={{ maxWidth: '600px', margin: '0 auto' }}>
+                              <form onSubmit={submitHandler}>
+                                  <Typography variant="h6" gutterBottom>
+                                      Edit Details
+                                  </Typography>
+                                  
+                                  <Stack spacing={3}>
+                                      <TextField
+                                          fullWidth
+                                          label="Name"
+                                          variant="outlined"
+                                          placeholder="Enter user's name..."
+                                          value={name}
+                                          onChange={(event) => setName(event.target.value)}
+                                          autoComplete="name"
+                                          required
+                                      />
 
-                            <label>Password</label>
-                            <input className="registerInput" type="password" placeholder="Enter user's password..."
-                                value={password}
-                                onChange={(event) => setPassword(event.target.value)}
-                                autoComplete="new-password" />
+                                      <TextField
+                                          fullWidth
+                                          label="Roll Number"
+                                          variant="outlined"
+                                          type="number"
+                                          placeholder="Enter user's Roll Number..."
+                                          value={rollNum}
+                                          onChange={(event) => setRollNum(event.target.value)}
+                                          required
+                                      />
 
-                            <button className="registerButton" type="submit" >Update</button>
-                        </form>
-                    </div>
-                </Collapse> */}
-            </div>
-        )
-    }
+                                      <TextField
+                                          fullWidth
+                                          label="Password"
+                                          variant="outlined"
+                                          type="password"
+                                          placeholder="Enter user's password..."
+                                          value={password}
+                                          onChange={(event) => setPassword(event.target.value)}
+                                          autoComplete="new-password"
+                                      />
 
-    return (
-        <>
-            {loading
-                ?
-                <>
-                    <div>Loading...</div>
-                </>
-                :
-                <>
-                    <Box sx={{ width: '100%', typography: 'body1', }} >
-                        <TabContext value={value}>
-                            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                                <TabList onChange={handleChange} sx={{ position: 'fixed', width: '100%', bgcolor: 'background.paper', zIndex: 1 }}>
-                                    <Tab label="Details" value="1" />
-                                    <Tab label="Attendance" value="2" />
-                                    <Tab label="Marks" value="3" />
-                                </TabList>
-                            </Box>
-                            <Container sx={{ marginTop: "3rem", marginBottom: "4rem" }}>
-                                <TabPanel value="1">
-                                    <StudentDetailsSection />
-                                </TabPanel>
-                                <TabPanel value="2">
-                                    <StudentAttendanceSection />
-                                </TabPanel>
-                                <TabPanel value="3">
-                                    <StudentMarksSection />
-                                </TabPanel>
-                            </Container>
-                        </TabContext>
-                    </Box>
-                </>
-            }
-            <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
+                                      <Button
+                                          variant="contained"
+                                          type="submit"
+                                          fullWidth
+                                          sx={{
+                                              mt: 2,
+                                              bgcolor: 'primary.main',
+                                              '&:hover': {
+                                                  bgcolor: 'primary.dark',
+                                              },
+                                          }}
+                                      >
+                                          Update
+                                      </Button>
+                                  </Stack>
+                              </form>
+                          </Box>
+                      </Collapse>
+                  </Paper>
+              </Box>
+          )
+      }
 
-        </>
-    )
-}
+      return (
+          <>
+              {loading ? (
+                  <div className="loading-container">
+                      <p>Loading...</p>
+                  </div>
+              ) : (
+                  <Box sx={{ width: '100%', typography: 'body1' }}>
+                      <TabContext value={value}>
+                          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                              <TabList 
+                                  onChange={handleChange} 
+                                  sx={{ 
+                                      position: 'fixed', 
+                                      width: '100%', 
+                                      bgcolor: 'background.paper', 
+                                      zIndex: 1,
+                                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                  }}
+                              >
+                                  <Tab label="Details" value="1" />
+                                  <Tab label="Attendance" value="2" />
+                                  <Tab label="Marks" value="3" />
+                              </TabList>
+                          </Box>
+                          <Container sx={{ marginTop: "4rem", marginBottom: "4rem" }}>
+                              <TabPanel value="1">
+                                  <StudentDetailsSection />
+                              </TabPanel>
+                              <TabPanel value="2">
+                                  <StudentAttendanceSection />
+                              </TabPanel>
+                              <TabPanel value="3">
+                                  <StudentMarksSection />
+                              </TabPanel>
+                          </Container>
+                      </TabContext>
+                  </Box>
+              )}
+              <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
+          </>
+      )
+  }
 
-export default ViewStudent
+  export default ViewStudent
 
-const styles = {
-    attendanceButton: {
-        marginLeft: "20px",
-        backgroundColor: "#270843",
-        "&:hover": {
-            backgroundColor: "#3f1068",
-        }
-    },
-    styledButton: {
-        margin: "20px",
-        backgroundColor: "#02250b",
-        "&:hover": {
-            backgroundColor: "#106312",
-        }
-    }
-}
+  const styles = {
+      attendanceButton: {
+          marginLeft: "20px",
+          backgroundColor: "#1976d2",
+          "&:hover": {
+              backgroundColor: "#1565c0",
+          }
+      },
+      styledButton: {
+          margin: "20px",
+          backgroundColor: "#2e7d32",
+          "&:hover": {
+              backgroundColor: "#1b5e20",
+          }
+      }
+  }

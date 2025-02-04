@@ -1,291 +1,192 @@
 import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, useParams } from 'react-router-dom'
-import { getClassDetails, getClassStudents, getSubjectList } from "../../../redux/sclassRelated/sclassHandle";
-import { deleteUser } from '../../../redux/userRelated/userHandle';
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate, useParams } from "react-router-dom";
 import {
-    Box, Container, Typography, Tab, IconButton
-} from '@mui/material';
-import TabContext from '@mui/lab/TabContext';
-import TabList from '@mui/lab/TabList';
-import TabPanel from '@mui/lab/TabPanel';
+  getClassDetails,
+  getClassStudents,
+  getSubjectList,
+} from "../../../redux/sclassRelated/sclassHandle";
+import { deleteUser } from "../../../redux/userRelated/userHandle";
+import {
+  Box,
+  Container,
+  Typography,
+  Grid,
+  Paper,
+  Card,
+  CardContent,
+  CardActions,
+} from "@mui/material";
 import { resetSubjects } from "../../../redux/sclassRelated/sclassSlice";
-import { BlueButton, GreenButton, PurpleButton } from "../../../components/buttonStyles";
-import TableTemplate from "../../../components/TableTemplate";
-import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
-import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
-import SpeedDialTemplate from "../../../components/SpeedDialTemplate";
+import { BlueButton, GreenButton } from "../../../components/buttonStyles";
+import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
+import PersonRemoveIcon from "@mui/icons-material/PersonRemove";
+import PostAddIcon from "@mui/icons-material/PostAdd";
+import PeopleIcon from "@mui/icons-material/People";
+import MenuBookIcon from "@mui/icons-material/MenuBook";
+import SchoolIcon from "@mui/icons-material/School";
 import Popup from "../../../components/Popup";
-import DeleteIcon from "@mui/icons-material/Delete";
-import PostAddIcon from '@mui/icons-material/PostAdd';
 
 const ClassDetails = () => {
-    const params = useParams()
-    const navigate = useNavigate()
-    const dispatch = useDispatch();
-    const { subjectsList, sclassStudents, sclassDetails, loading, error, response, getresponse } = useSelector((state) => state.sclass);
+  const params = useParams();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { subjectsList, sclassStudents, sclassDetails, loading, error } =
+    useSelector((state) => state.sclass);
 
-    const classID = params.id
+  const classID = params.id;
 
-    useEffect(() => {
-        dispatch(getClassDetails(classID, "Sclass"));
-        dispatch(getSubjectList(classID, "ClassSubjects"))
-        dispatch(getClassStudents(classID));
-    }, [dispatch, classID])
+  useEffect(() => {
+    dispatch(getClassDetails(classID, "Sclass"));
+    dispatch(getSubjectList(classID, "ClassSubjects"));
+    dispatch(getClassStudents(classID));
+  }, [dispatch, classID]);
 
-    if (error) {
-        console.log(error)
-    }
+  if (error) {
+    console.log(error);
+  }
 
-    const [value, setValue] = useState('1');
+  const [showPopup, setShowPopup] = useState(false);
+  const [message, setMessage] = useState("");
 
-    const handleChange = (event, newValue) => {
-        setValue(newValue);
-    };
+  const deleteHandler = (deleteID, address) => {
+    setMessage("Sorry the delete function has been disabled for now.");
+    setShowPopup(true);
+  };
 
-    const [showPopup, setShowPopup] = useState(false);
-    const [message, setMessage] = useState("");
-
-    const deleteHandler = (deleteID, address) => {
-        console.log(deleteID);
-        console.log(address);
-        setMessage("Sorry the delete function has been disabled for now.")
-        setShowPopup(true)
-        // dispatch(deleteUser(deleteID, address))
-        //     .then(() => {
-        //         dispatch(getClassStudents(classID));
-        //         dispatch(resetSubjects())
-        //         dispatch(getSubjectList(classID, "ClassSubjects"))
-        //     })
-    }
-
-    const subjectColumns = [
-        { id: 'name', label: 'Subject Name', minWidth: 170 },
-        { id: 'code', label: 'Subject Code', minWidth: 100 },
-    ]
-
-    const subjectRows = subjectsList && subjectsList.length > 0 && subjectsList.map((subject) => {
-        return {
-            name: subject.subName,
-            code: subject.subCode,
-            id: subject._id,
-        };
-    })
-
-    const SubjectsButtonHaver = ({ row }) => {
-        return (
-            <>
-                <IconButton onClick={() => deleteHandler(row.id, "Subject")}>
-                    <DeleteIcon color="error" />
-                </IconButton>
-                <BlueButton
-                    variant="contained"
-                    onClick={() => {
-                        navigate(`/Admin/class/subject/${classID}/${row.id}`)
-                    }}
-                >
-                    View
-                </BlueButton >
-            </>
-        );
-    };
-
-    const subjectActions = [
-        {
-            icon: <PostAddIcon color="primary" />, name: 'Add New Subject',
-            action: () => navigate("/Admin/addsubject/" + classID)
-        },
-        {
-            icon: <DeleteIcon color="error" />, name: 'Delete All Subjects',
-            action: () => deleteHandler(classID, "SubjectsClass")
-        }
-    ];
-
-    const ClassSubjectsSection = () => {
-        return (
-            <>
-                {response ?
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
-                        <GreenButton
-                            variant="contained"
-                            onClick={() => navigate("/Admin/addsubject/" + classID)}
-                        >
-                            Add Subjects
-                        </GreenButton>
-                    </Box>
-                    :
-                    <>
-                        <Typography variant="h5" gutterBottom>
-                            Subjects List:
-                        </Typography>
-
-                        <TableTemplate buttonHaver={SubjectsButtonHaver} columns={subjectColumns} rows={subjectRows} />
-                        <SpeedDialTemplate actions={subjectActions} />
-                    </>
-                }
-            </>
-        )
-    }
-
-    const studentColumns = [
-        { id: 'name', label: 'Name', minWidth: 170 },
-        { id: 'rollNum', label: 'Roll Number', minWidth: 100 },
-    ]
-
-    const studentRows = sclassStudents.map((student) => {
-        return {
-            name: student.name,
-            rollNum: student.rollNum,
-            id: student._id,
-        };
-    })
-
-    const StudentsButtonHaver = ({ row }) => {
-        return (
-            <>
-                <IconButton onClick={() => deleteHandler(row.id, "Student")}>
-                    <PersonRemoveIcon color="error" />
-                </IconButton>
-                <BlueButton
-                    variant="contained"
-                    onClick={() => navigate("/Admin/students/student/" + row.id)}
-                >
-                    View
-                </BlueButton>
-                <PurpleButton
-                    variant="contained"
-                    onClick={() =>
-                        navigate("/Admin/students/student/attendance/" + row.id)
-                    }
-                >
-                    Attendance
-                </PurpleButton>
-            </>
-        );
-    };
-
-    const studentActions = [
-        {
-            icon: <PersonAddAlt1Icon color="primary" />, name: 'Add New Student',
-            action: () => navigate("/Admin/class/addstudents/" + classID)
-        },
-        {
-            icon: <PersonRemoveIcon color="error" />, name: 'Delete All Students',
-            action: () => deleteHandler(classID, "StudentsClass")
-        },
-    ];
-
-    const ClassStudentsSection = () => {
-        return (
-            <>
-                {getresponse ? (
-                    <>
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
-                            <GreenButton
-                                variant="contained"
-                                onClick={() => navigate("/Admin/class/addstudents/" + classID)}
-                            >
-                                Add Students
-                            </GreenButton>
-                        </Box>
-                    </>
-                ) : (
-                    <>
-                        <Typography variant="h5" gutterBottom>
-                            Students List:
-                        </Typography>
-
-                        <TableTemplate buttonHaver={StudentsButtonHaver} columns={studentColumns} rows={studentRows} />
-                        <SpeedDialTemplate actions={studentActions} />
-                    </>
-                )}
-            </>
-        )
-    }
-
-    const ClassTeachersSection = () => {
-        return (
-            <>
-                Teachers
-            </>
-        )
-    }
-
-    const ClassDetailsSection = () => {
-        const numberOfSubjects = subjectsList.length;
-        const numberOfStudents = sclassStudents.length;
-
-        return (
-            <>
-                <Typography variant="h4" align="center" gutterBottom>
-                    Class Details
-                </Typography>
-                <Typography variant="h5" gutterBottom>
-                    This is Class {sclassDetails && sclassDetails.sclassName}
-                </Typography>
-                <Typography variant="h6" gutterBottom>
-                    Number of Subjects: {numberOfSubjects}
-                </Typography>
-                <Typography variant="h6" gutterBottom>
-                    Number of Students: {numberOfStudents}
-                </Typography>
-                {getresponse &&
-                    <GreenButton
-                        variant="contained"
-                        onClick={() => navigate("/Admin/class/addstudents/" + classID)}
-                    >
-                        Add Students
-                    </GreenButton>
-                }
-                {response &&
-                    <GreenButton
-                        variant="contained"
-                        onClick={() => navigate("/Admin/addsubject/" + classID)}
-                    >
-                        Add Subjects
-                    </GreenButton>
-                }
-            </>
-        );
-    }
-
+  const DashboardCard = ({ title, count, icon, color, action }) => {
     return (
-        <>
-            {loading ? (
-                <div>Loading...</div>
-            ) : (
-                <>
-                    <Box sx={{ width: '100%', typography: 'body1', }} >
-                        <TabContext value={value}>
-                            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                                <TabList onChange={handleChange} sx={{ position: 'fixed', width: '100%', bgcolor: 'background.paper', zIndex: 1 }}>
-                                    <Tab label="Details" value="1" />
-                                    <Tab label="Subjects" value="2" />
-                                    <Tab label="Students" value="3" />
-                                    <Tab label="Teachers" value="4" />
-                                </TabList>
-                            </Box>
-                            <Container sx={{ marginTop: "3rem", marginBottom: "4rem" }}>
-                                <TabPanel value="1">
-                                    <ClassDetailsSection />
-                                </TabPanel>
-                                <TabPanel value="2">
-                                    <ClassSubjectsSection />
-                                </TabPanel>
-                                <TabPanel value="3">
-                                    <ClassStudentsSection />
-                                </TabPanel>
-                                <TabPanel value="4">
-                                    <ClassTeachersSection />
-                                </TabPanel>
-                            </Container>
-                        </TabContext>
-                    </Box>
-                </>
-            )}
-            <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
-        </>
+      <Card sx={{ height: "100%", backgroundColor: color, color: "white" }}>
+        <CardContent>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            {icon}
+            <Typography variant="h4">{count}</Typography>
+          </Box>
+          <Typography variant="h6" sx={{ mt: 2 }}>
+            {title}
+          </Typography>
+        </CardContent>
+        <CardActions>
+          <BlueButton size="small" onClick={action} sx={{ color: "white" }}>
+            Back to Dashboard
+          </BlueButton>
+        </CardActions>
+      </Card>
     );
+  };
+
+  return (
+    <>
+      {loading ? (
+        <div>Loading...</div>
+      ) : (
+        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+          <Typography variant="h4" gutterBottom component="div" sx={{ mb: 4 }}>
+            Class {sclassDetails && sclassDetails.sclassName} Dashboard
+          </Typography>
+
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6} md={4}>
+              <DashboardCard
+                title="Total Students"
+                count={sclassStudents.length}
+                icon={<PeopleIcon sx={{ fontSize: 40 }} />}
+                color="#1976d2"
+                action={() => navigate(`/Admin/class/${classID}/students`)}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <DashboardCard
+                title="Total Subjects"
+                count={subjectsList.length}
+                icon={<MenuBookIcon sx={{ fontSize: 40 }} />}
+                color="#2e7d32"
+                action={() => navigate(`/Admin/class/${classID}/subjects`)}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <DashboardCard
+                title="Class Performance"
+                // count="View"
+                icon={<SchoolIcon sx={{ fontSize: 40 }} />}
+                color="#ed6c02"
+                action={() => navigate(`/Admin/class/${classID}/performance`)}
+              />
+            </Grid>
+          </Grid>
+
+          <Grid container spacing={3} sx={{ mt: 4 }}>
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 2, display: "flex", flexDirection: "column" }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    mb: 2,
+                  }}
+                >
+                  <Typography variant="h6">Quick Actions</Typography>
+                </Box>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <GreenButton
+                      fullWidth
+                      variant="contained"
+                      startIcon={<PersonAddAlt1Icon />}
+                      onClick={() =>
+                        navigate("/Admin/class/addstudents/" + classID)
+                      }
+                    >
+                      Add Student
+                    </GreenButton>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <GreenButton
+                      fullWidth
+                      variant="contained"
+                      startIcon={<PostAddIcon />}
+                      onClick={() => navigate("/Admin/addsubject/" + classID)}
+                    >
+                      Add Subject
+                    </GreenButton>
+                  </Grid>
+                </Grid>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 2, display: "flex", flexDirection: "column" }}>
+                <Typography variant="h6" gutterBottom>
+                  Class Information
+                </Typography>
+                <Typography variant="body1">
+                  Class Name: {sclassDetails && sclassDetails.sclassName}
+                </Typography>
+                <Typography variant="body1">
+                  Academic Year: {new Date().getFullYear()}-
+                  {new Date().getFullYear() + 1}
+                </Typography>
+                <Typography variant="body1">
+                  Class Teacher: Not Assigned
+                </Typography>
+              </Paper>
+            </Grid>
+          </Grid>
+        </Container>
+      )}
+      <Popup
+        message={message}
+        setShowPopup={setShowPopup}
+        showPopup={showPopup}
+      />
+    </>
+  );
 };
 
 export default ClassDetails;

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { getClassStudents, getSubjectDetails } from '../../../redux/sclassRelated/sclassHandle';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { Box, Tab, Container, Typography, BottomNavigation, BottomNavigationAction, Paper } from '@mui/material';
+import { Box, Tab, Container, Typography, BottomNavigation, BottomNavigationAction, Paper, Card, CardContent, Grid, Divider } from '@mui/material';
 import { BlueButton, GreenButton, PurpleButton } from '../../../components/buttonStyles';
 import TableTemplate from '../../../components/TableTemplate';
 import TabContext from '@mui/lab/TabContext';
@@ -13,6 +13,12 @@ import InsertChartIcon from '@mui/icons-material/InsertChart';
 import InsertChartOutlinedIcon from '@mui/icons-material/InsertChartOutlined';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import TableChartOutlinedIcon from '@mui/icons-material/TableChartOutlined';
+import SubjectIcon from '@mui/icons-material/Subject';
+import PersonIcon from '@mui/icons-material/Person';
+import ClassIcon from '@mui/icons-material/Class';
+import CodeIcon from '@mui/icons-material/Code';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import GroupIcon from '@mui/icons-material/Group';
 
 const ViewSubject = () => {
   const navigate = useNavigate()
@@ -134,7 +140,6 @@ const ViewSubject = () => {
                 />
               </BottomNavigation>
             </Paper>
-
           </>
         )}
       </>
@@ -145,43 +150,79 @@ const ViewSubject = () => {
     const numberOfStudents = sclassStudents.length;
 
     return (
-      <>
-        <Typography variant="h4" align="center" gutterBottom>
+      <Box sx={{ flexGrow: 1, padding: 3 }}>
+        <Typography variant="h4" align="center" gutterBottom sx={{ mb: 4 }}>
           Subject Details
         </Typography>
-        <Typography variant="h6" gutterBottom>
-          Subject Name : {subjectDetails && subjectDetails.subName}
-        </Typography>
-        <Typography variant="h6" gutterBottom>
-          Subject Code : {subjectDetails && subjectDetails.subCode}
-        </Typography>
-        <Typography variant="h6" gutterBottom>
-          Subject Sessions : {subjectDetails && subjectDetails.sessions}
-        </Typography>
-        <Typography variant="h6" gutterBottom>
-          Number of Students: {numberOfStudents}
-        </Typography>
-        <Typography variant="h6" gutterBottom>
-          Class Name : {subjectDetails && subjectDetails.sclassName && subjectDetails.sclassName.sclassName}
-        </Typography>
-        {subjectDetails && subjectDetails.teacher ?
-          <Typography variant="h6" gutterBottom>
-            Teacher Name : {subjectDetails.teacher.name}
-          </Typography>
-          :
-          <GreenButton variant="contained"
-            onClick={() => navigate("/Admin/teachers/addteacher/" + subjectDetails._id)}>
-            Add Subject Teacher
-          </GreenButton>
-        }
-      </>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <Card elevation={3}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <SubjectIcon sx={{ mr: 2, color: 'primary.main' }} />
+                  <Typography variant="h6">
+                    Subject Name: {subjectDetails && subjectDetails.subName}
+                  </Typography>
+                </Box>
+                <Divider sx={{ my: 2 }} />
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <CodeIcon sx={{ mr: 2, color: 'primary.main' }} />
+                  <Typography variant="h6">
+                    Subject Code: {subjectDetails && subjectDetails.subCode}
+                  </Typography>
+                </Box>
+                <Divider sx={{ my: 2 }} />
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <AccessTimeIcon sx={{ mr: 2, color: 'primary.main' }} />
+                  <Typography variant="h6">
+                    Sessions: {subjectDetails && subjectDetails.sessions}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Card elevation={3}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <GroupIcon sx={{ mr: 2, color: 'primary.main' }} />
+                  <Typography variant="h6">
+                    Number of Students: {numberOfStudents}
+                  </Typography>
+                </Box>
+                <Divider sx={{ my: 2 }} />
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <ClassIcon sx={{ mr: 2, color: 'primary.main' }} />
+                  <Typography variant="h6">
+                    Class: {subjectDetails && subjectDetails.sclassName && subjectDetails.sclassName.sclassName}
+                  </Typography>
+                </Box>
+                <Divider sx={{ my: 2 }} />
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <PersonIcon sx={{ mr: 2, color: 'primary.main' }} />
+                  {subjectDetails && subjectDetails.teacher ? (
+                    <Typography variant="h6">
+                      Teacher: {subjectDetails.teacher.name}
+                    </Typography>
+                  ) : (
+                    <GreenButton variant="contained"
+                      onClick={() => navigate("/Admin/teachers/addteacher/" + subjectDetails._id)}>
+                      Add Subject Teacher
+                    </GreenButton>
+                  )}
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </Box>
     );
   }
 
   return (
     <>
       {subloading ?
-        < div > Loading...</div >
+        <div>Loading...</div>
         :
         <>
           <Box sx={{ width: '100%', typography: 'body1', }} >

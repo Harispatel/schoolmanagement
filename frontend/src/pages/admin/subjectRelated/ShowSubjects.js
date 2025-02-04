@@ -5,7 +5,7 @@ import { getSubjectList } from '../../../redux/sclassRelated/sclassHandle';
 import { deleteUser } from '../../../redux/userRelated/userHandle';
 import PostAddIcon from '@mui/icons-material/PostAdd';
 import {
-    Paper, Box, IconButton,
+    Paper, Box, IconButton, Typography, Container
 } from '@mui/material';
 import DeleteIcon from "@mui/icons-material/Delete";
 import TableTemplate from '../../../components/TableTemplate';
@@ -35,11 +35,6 @@ const ShowSubjects = () => {
         console.log(address);
         setMessage("Sorry the delete function has been disabled for now.")
         setShowPopup(true)
-
-        // dispatch(deleteUser(deleteID, address))
-        //     .then(() => {
-        //         dispatch(getSubjectList(currentUser._id, "AllSubjects"));
-        //     })
     }
 
     const subjectColumns = [
@@ -84,31 +79,35 @@ const ShowSubjects = () => {
     ];
 
     return (
-        <>
-            {loading ?
-                <div>Loading...</div>
-                :
+        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+            <Typography variant="h4" component="h1" gutterBottom sx={{ color: '#1976d2', fontWeight: 'bold', textAlign: 'center' }}>
+                Manage Subjects
+            </Typography>
+            {loading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+                    <Typography>Loading...</Typography>
+                </Box>
+            ) : (
                 <>
-                    {response ?
+                    {response ? (
                         <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
                             <GreenButton variant="contained"
                                 onClick={() => navigate("/Admin/subjects/chooseclass")}>
                                 Add Subjects
                             </GreenButton>
                         </Box>
-                        :
-                        <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-                            {Array.isArray(subjectsList) && subjectsList.length > 0 &&
+                    ) : (
+                        <Paper sx={{ width: '100%', overflow: 'hidden', borderRadius: 2, boxShadow: 3 }}>
+                            {Array.isArray(subjectsList) && subjectsList.length > 0 && (
                                 <TableTemplate buttonHaver={SubjectsButtonHaver} columns={subjectColumns} rows={subjectRows} />
-                            }
+                            )}
                             <SpeedDialTemplate actions={actions} />
                         </Paper>
-                    }
+                    )}
                 </>
-            }
+            )}
             <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
-
-        </>
+        </Container>
     );
 };
 
